@@ -1,0 +1,25 @@
+# LogicaHome user configuration.
+# This file lives at the platform-specific user config dir
+# (macOS: ~/Library/Application Support/logicahome/config.yaml)
+# Run `logicahome config` to print the resolved path.
+
+adapters:
+  # Home Assistant — bridges into an existing HA install.
+  # home_assistant:
+  #   url: http://homeassistant.local:8123
+  #   token: <long-lived-access-token>
+  #   include_domains: [light, switch, climate, lock, scene]
+
+  # Tuya / SmartLife — local LAN, no cloud required.
+  # Get device id + local_key from the tinytuya wizard:
+  #   pip install tinytuya
+  #   python -m tinytuya wizard
+  # tuya:
+  #   devices:
+  #     - id: bf12345abcdef
+  #       ip: 192.168.0.42
+  #       local_key: <key>
+  #       version: "3.4"
+  #       name: "Living room lamp"
+  #       room: living-room
+  #       capabilities: [on_off, brightness]

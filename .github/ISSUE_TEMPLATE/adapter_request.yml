@@ -1,0 +1,52 @@
+name: Adapter request
+description: Request support for a new smart-home ecosystem
+labels: [adapter, enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Adapters are the smallest unit of contribution to LogicaHome.
+        If you want to ship this yourself, see [docs/writing-adapters.md](https://github.com/Rovemark/logicahome/blob/main/docs/writing-adapters.md).
+  - type: input
+    id: ecosystem
+    attributes:
+      label: Ecosystem
+      placeholder: "Philips Hue / Shelly / Sonos / Matter / ..."
+    validations:
+      required: true
+  - type: input
+    id: api-docs
+    attributes:
+      label: Public API documentation
+      placeholder: "https://..."
+    validations:
+      required: true
+  - type: dropdown
+    id: protocol
+    attributes:
+      label: Protocol
+      options:
+        - Local LAN (recommended)
+        - Cloud REST
+        - Cloud + LAN hybrid
+        - Bluetooth / Zigbee / Z-Wave
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: Capabilities to support
+      description: e.g. on/off, brightness, color, temperature, lock, scene
+    validations:
+      required: true
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Are you willing to implement this?
+      options:
+        - Yes, I want to write the adapter
+        - Maybe, with guidance
+        - No, just requesting
+    validations:
+      required: true

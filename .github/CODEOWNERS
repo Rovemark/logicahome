@@ -1,0 +1,5 @@
+# Default owner for everything in the repo.
+*       @sirambrosio
+
+# Adapters can have specific owners as the project grows.
+/src/logicahome/adapters/   @sirambrosio
