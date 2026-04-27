@@ -28,9 +28,11 @@ connect_app = typer.Typer(
     no_args_is_help=True,
     invoke_without_command=True,
 )
+scene_app = typer.Typer(help="Save, list, and run scenes.", no_args_is_help=True)
 app.add_typer(mcp_app, name="mcp")
 app.add_typer(device_app, name="device")
 app.add_typer(connect_app, name="connect")
+app.add_typer(scene_app, name="scene")
 
 console = Console()
 
@@ -224,6 +226,87 @@ def scan() -> None:
             h.get("adapter", "?"), h.get("ip", "?"), h.get("id", "?"), str(h.get("version", "?"))
         )
     console.print(table)
+
+
+# --- scenes subcommand ----------------------------------------------------
+
+
+@scene_app.command("list")
+def scene_list() -> None:
+    """List all saved scenes."""
+
+    async def _run() -> None:
+        runtime = Runtime()
+        await runtime.initialize()
+        scenes = await runtime.list_scenes()
+        await runtime.shutdown()
+
+        if not scenes:
+            console.print(
+                "[yellow]No scenes yet.[/] Save one with [cyan]logicahome scene snapshot[/]."
+            )
+            return
+        table = Table(title=f"{len(scenes)} scene(s)")
+        table.add_column("slug", style="cyan")
+        table.add_column("name")
+        table.add_column("description")
+        table.add_column("devices", justify="right")
+        for s in scenes:
+            table.add_row(s.slug, s.name, s.description or "-", str(len(s.actions)))
+        console.print(table)
+
+    asyncio.run(_run())
+
+
+@scene_app.command("run")
+def scene_run(slug: str) -> None:
+    """Apply a saved scene."""
+
+    async def _run() -> None:
+        runtime = Runtime()
+        await runtime.initialize()
+        result = await runtime.run_scene(slug)
+        await runtime.shutdown()
+        console.print_json(json.dumps(result))
+
+    asyncio.run(_run())
+
+
+@scene_app.command("snapshot")
+def scene_snapshot(
+    slug: str,
+    name: str = typer.Option(..., "--name", "-n", help="Human-readable scene name"),
+    description: str | None = typer.Option(None, "--description", "-d"),
+) -> None:
+    """Capture the current state of every known device as a new scene."""
+
+    async def _run() -> None:
+        runtime = Runtime()
+        await runtime.initialize()
+        scene = await runtime.snapshot_scene(slug=slug, name=name, description=description)
+        await runtime.shutdown()
+        console.print(
+            f"[green]Saved scene[/] [cyan]{scene.slug}[/] with {len(scene.actions)} device action(s)."
+        )
+
+    asyncio.run(_run())
+
+
+@scene_app.command("remove")
+def scene_remove(slug: str) -> None:
+    """Delete a scene by slug."""
+
+    async def _run() -> None:
+        runtime = Runtime()
+        await runtime.initialize()
+        removed = await runtime.remove_scene(slug)
+        await runtime.shutdown()
+        if removed:
+            console.print(f"[green]Removed scene[/] {slug}")
+        else:
+            console.print(f"[yellow]No scene with slug[/] {slug}")
+
+    asyncio.run(_run())
 
 
 # --- MCP subcommand --------------------------------------------------------

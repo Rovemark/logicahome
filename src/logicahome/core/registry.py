@@ -14,6 +14,7 @@ import aiosqlite
 from platformdirs import user_config_dir
 
 from logicahome.core.device import Device, DeviceCapability
+from logicahome.core.scene import Scene, SceneAction
 
 
 def _config_dir() -> Path:
@@ -42,6 +43,13 @@ CREATE TABLE IF NOT EXISTS devices (
 
 CREATE INDEX IF NOT EXISTS idx_devices_adapter ON devices(adapter);
 CREATE INDEX IF NOT EXISTS idx_devices_room ON devices(room);
+
+CREATE TABLE IF NOT EXISTS scenes (
+    slug TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    actions TEXT NOT NULL
+);
 """
 
 
@@ -118,4 +126,55 @@ class Registry:
             manufacturer=row["manufacturer"],
             model=row["model"],
             metadata=json.loads(row["metadata"]),
+        )
+
+    # --- scenes ------------------------------------------------------------
+
+    async def upsert_scene(self, scene: Scene) -> None:
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                """
+                INSERT INTO scenes (slug, name, description, actions)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(slug) DO UPDATE SET
+                    name=excluded.name,
+                    description=excluded.description,
+                    actions=excluded.actions
+                """,
+                (
+                    scene.slug,
+                    scene.name,
+                    scene.description,
+                    json.dumps([a.model_dump() for a in scene.actions]),
+                ),
+            )
+            await db.commit()
+
+    async def list_scenes(self) -> list[Scene]:
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            rows = await (await db.execute("SELECT * FROM scenes ORDER BY name")).fetchall()
+            return [self._row_to_scene(r) for r in rows]
+
+    async def get_scene(self, slug: str) -> Scene | None:
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            row = await (
+                await db.execute("SELECT * FROM scenes WHERE slug = ?", (slug,))
+            ).fetchone()
+            return self._row_to_scene(row) if row else None
+
+    async def remove_scene(self, slug: str) -> bool:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute("DELETE FROM scenes WHERE slug = ?", (slug,))
+            await db.commit()
+            return cursor.rowcount > 0
+
+    @staticmethod
+    def _row_to_scene(row: Any) -> Scene:
+        return Scene(
+            slug=row["slug"],
+            name=row["name"],
+            description=row["description"],
+            actions=[SceneAction(**a) for a in json.loads(row["actions"])],
         )

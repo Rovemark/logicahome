@@ -10,8 +10,25 @@ All notable changes to LogicaHome are documented here. The format is based on [K
 - Google Home adapter using the official Home APIs.
 - REST/SSE surface as an alternative to MCP for non-AI integrators.
 - PyPI release with trusted publishing.
-- Scenes (multi-device state snapshots) and an MCP `run_scene` tool.
 - mDNS / SSDP discovery in `logicahome scan`.
+
+## [0.2.0] - 2026-04-27
+
+### Added
+
+- **Scenes** — multi-device state snapshots that any AI can trigger by name.
+  - New `Scene` and `SceneAction` models in `logicahome.core.scene`.
+  - SQLite persistence (new `scenes` table; existing registries auto-migrate on startup).
+  - Three new MCP tools: `list_scenes`, `run_scene(slug)`, `snapshot_scene(slug, name, description?)`.
+  - `run_scene` fans device updates out concurrently and reports a per-device status map; one device failure no longer aborts the rest of the scene.
+  - `snapshot_scene` reads the current state of every known device and saves it as a reusable scene — perfect for "save this as bedtime".
+  - New CLI subcommand: `logicahome scene list | run | snapshot | remove`.
+- New cookbook with prompt patterns and CLI recipes: [`docs/cookbook.md`](docs/cookbook.md).
+- README links to the cookbook and reflects the expanded MCP surface (10 tools).
+
+### Changed
+
+- `Runtime` now exposes `list_scenes`, `save_scene`, `remove_scene`, `run_scene`, and `snapshot_scene`. CLI and MCP server both consume them — no behavior split between surfaces.
 
 ## [0.1.1] - 2026-04-27
 
@@ -42,6 +59,7 @@ All notable changes to LogicaHome are documented here. The format is based on [K
 - Apache 2.0 license.
 - Smoke test suite.
 
-[Unreleased]: https://github.com/Rovemark/logicahome/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/Rovemark/logicahome/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Rovemark/logicahome/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Rovemark/logicahome/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Rovemark/logicahome/releases/tag/v0.1.0

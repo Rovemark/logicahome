@@ -102,6 +102,44 @@ async def list_tools() -> list[Tool]:
             ),
             inputSchema={"type": "object", "properties": {}, "required": []},
         ),
+        Tool(
+            name="list_scenes",
+            description=(
+                "List every saved scene (multi-device state snapshot). "
+                "Use this to discover scene slugs before calling run_scene."
+            ),
+            inputSchema={"type": "object", "properties": {}, "required": []},
+        ),
+        Tool(
+            name="run_scene",
+            description=(
+                "Apply a saved scene by slug. Each device action runs concurrently; "
+                "failures on one device do not abort the others. Returns a per-device "
+                "status map."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {"slug": {"type": "string"}},
+                "required": ["slug"],
+            },
+        ),
+        Tool(
+            name="snapshot_scene",
+            description=(
+                "Capture the current state of every known device as a new scene. "
+                "Useful when the user says 'save this as bedtime' — read every device, "
+                "store the snapshot, then run_scene('bedtime') reproduces it later."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slug": {"type": "string"},
+                    "name": {"type": "string"},
+                    "description": {"type": "string"},
+                },
+                "required": ["slug", "name"],
+            },
+        ),
     ]
 
 
@@ -154,6 +192,24 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                 ),
             )
         ]
+
+    if name == "list_scenes":
+        scenes = await rt.list_scenes()
+        return [
+            TextContent(type="text", text=json.dumps([s.model_dump() for s in scenes], indent=2))
+        ]
+
+    if name == "run_scene":
+        result = await rt.run_scene(arguments["slug"])
+        return [TextContent(type="text", text=json.dumps(result, indent=2))]
+
+    if name == "snapshot_scene":
+        scene = await rt.snapshot_scene(
+            slug=arguments["slug"],
+            name=arguments["name"],
+            description=arguments.get("description"),
+        )
+        return [TextContent(type="text", text=json.dumps(scene.model_dump(), indent=2))]
 
     raise ValueError(f"Unknown tool: {name}")
 

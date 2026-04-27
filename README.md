@@ -156,7 +156,7 @@ logicahome mcp install --client print       # print config snippet
 
 ## MCP tools
 
-The MCP server exposes seven tools. Schemas are defined in [`src/logicahome/server.py`](src/logicahome/server.py):
+The MCP server exposes ten tools. Schemas are defined in [`src/logicahome/server.py`](src/logicahome/server.py):
 
 | Tool | Purpose |
 |---|---|
@@ -167,6 +167,11 @@ The MCP server exposes seven tools. Schemas are defined in [`src/logicahome/serv
 | `set_brightness` | Set brightness 0–100 (implies on). |
 | `set_color` | Set RGB color (each channel 0–255). |
 | `discover` | Re-scan all configured adapters. |
+| `list_scenes` | List every saved scene. |
+| `run_scene` | Apply a saved scene by slug (devices fan-out concurrently). |
+| `snapshot_scene` | Capture the current state of every device as a new scene. |
+
+Worked examples and prompt patterns: [`docs/cookbook.md`](docs/cookbook.md).
 
 ## Configuration
 
