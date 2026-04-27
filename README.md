@@ -55,11 +55,19 @@ pip install logicahome
 pip install "logicahome[tuya]"
 ```
 
-Initialize, discover devices, and install as an MCP server in Claude Desktop:
+Connect your devices using a guided wizard (no YAML editing required):
 
 ```bash
-logicahome init
-logicahome discover
+logicahome init                       # creates the config file
+logicahome connect                    # lists available wizards
+logicahome connect home-assistant     # paste URL + token, auto-validated
+logicahome connect tuya               # runs the tinytuya cloud wizard once
+logicahome discover                   # imports devices into the registry
+```
+
+Then install as an MCP server in Claude Desktop:
+
+```bash
 logicahome mcp install --client claude
 ```
 
@@ -73,6 +81,20 @@ logicahome device on living-room-lamp
 logicahome device brightness living-room-lamp 30
 logicahome device state living-room-lamp
 ```
+
+## Connecting devices
+
+LogicaHome ships an interactive wizard for every adapter that needs setup. You should never have to hand-edit YAML.
+
+| Wizard | What it does |
+|---|---|
+| `logicahome connect home-assistant` | Asks for HA URL + long-lived token, validates against `/api/`, saves config |
+| `logicahome connect tuya` | Runs the official tinytuya cloud wizard once, imports devices + local keys |
+| `logicahome scan` | Passive LAN scan (Tuya UDP broadcast today; mDNS/SSDP planned) |
+
+After running a wizard, run `logicahome discover` to populate the device registry. The MCP server picks the new devices up automatically — no restart needed for new clients.
+
+If your ecosystem isn't listed, [request an adapter](https://github.com/Rovemark/logicahome/issues/new?template=adapter_request.yml).
 
 ## How it works
 

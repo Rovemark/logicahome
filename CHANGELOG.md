@@ -4,6 +4,13 @@ All notable changes to LogicaHome are documented here. The format is based on [K
 
 ## [Unreleased]
 
+### Added
+
+- Interactive `logicahome connect` wizards — no YAML editing required for onboarding.
+  - `logicahome connect home-assistant` validates URL + token against `/api/` before saving.
+  - `logicahome connect tuya` runs the official tinytuya cloud wizard and imports devices + local keys automatically.
+- `logicahome scan` for passive LAN discovery (Tuya UDP broadcast today; mDNS/SSDP planned).
+
 ### Planned
 
 - Wire up real device control in the Tuya adapter (currently a configured-discovery stub).

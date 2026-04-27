@@ -23,8 +23,14 @@ app = typer.Typer(
 )
 mcp_app = typer.Typer(help="Run or install the LogicaHome MCP server.", no_args_is_help=True)
 device_app = typer.Typer(help="Inspect and control devices.", no_args_is_help=True)
+connect_app = typer.Typer(
+    help="Interactive wizards to connect adapters (Tuya, Home Assistant, ...).",
+    no_args_is_help=True,
+    invoke_without_command=True,
+)
 app.add_typer(mcp_app, name="mcp")
 app.add_typer(device_app, name="device")
+app.add_typer(connect_app, name="connect")
 
 console = Console()
 
@@ -154,6 +160,70 @@ def _set_state(slug: str, **changes: object) -> None:
         console.print_json(json.dumps(new_state.model_dump()))
 
     asyncio.run(_run())
+
+
+# --- connect subcommand (interactive wizards) -----------------------------
+
+
+@connect_app.callback()
+def connect_default(ctx: typer.Context) -> None:
+    """When called with no adapter, list available wizards."""
+    if ctx.invoked_subcommand is not None:
+        return
+    table = Table(title="Available wizards")
+    table.add_column("command", style="cyan")
+    table.add_column("description")
+    table.add_row("logicahome connect tuya", "Tuya / SmartLife — local LAN, no cloud")
+    table.add_row(
+        "logicahome connect home-assistant",
+        "Home Assistant — bridge into an existing install",
+    )
+    console.print(table)
+    console.print(
+        "\nDon't see your ecosystem? "
+        "Open an adapter request: "
+        "https://github.com/Rovemark/logicahome/issues/new?template=adapter_request.yml"
+    )
+
+
+@connect_app.command("tuya")
+def connect_tuya_cmd() -> None:
+    """Wizard for Tuya / SmartLife (uses tinytuya cloud login once)."""
+    from logicahome.wizards import connect_tuya
+
+    connect_tuya()
+
+
+@connect_app.command("home-assistant")
+def connect_ha_cmd() -> None:
+    """Wizard for Home Assistant (URL + long-lived access token)."""
+    from logicahome.wizards import connect_home_assistant
+
+    connect_home_assistant()
+
+
+@app.command()
+def scan() -> None:
+    """Passively scan the local network for devices LogicaHome can recognize."""
+    from logicahome.wizards import scan_network
+
+    hits = scan_network()
+    if not hits:
+        console.print(
+            "[yellow]No devices detected.[/] "
+            "If you have devices, try [cyan]logicahome connect[/] for the right adapter."
+        )
+        return
+    table = Table(title=f"{len(hits)} device(s) detected")
+    table.add_column("adapter", style="cyan")
+    table.add_column("ip")
+    table.add_column("id")
+    table.add_column("version")
+    for h in hits:
+        table.add_row(
+            h.get("adapter", "?"), h.get("ip", "?"), h.get("id", "?"), str(h.get("version", "?"))
+        )
+    console.print(table)
 
 
 # --- MCP subcommand --------------------------------------------------------
