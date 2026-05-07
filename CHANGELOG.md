@@ -6,11 +6,41 @@ All notable changes to LogicaHome are documented here. The format is based on [K
 
 ### Planned
 
-- Native Matter adapter via `python-matter-server`.
+- Full Matter adapter implementation against `python-matter-server`.
 - Google Home adapter using the official Home APIs.
-- REST/SSE surface as an alternative to MCP for non-AI integrators.
-- PyPI release with trusted publishing.
-- mDNS / SSDP discovery in `logicahome scan`.
+- Per-user memory ("Andre likes the living room at 60% before bed").
+
+## [0.3.0] - 2026-05-06
+
+### Added
+
+- Six adapters total: Tuya, Home Assistant, Philips Hue, Shelly (Gen1+Gen2), ESPHome, Matter (skeleton).
+- `logicahome connect hue` and `logicahome connect shelly` wizards.
+- MCP HTTP/SSE transport — `logicahome mcp serve --http` exposes the same surface to remote clients.
+- mDNS / zeroconf discovery in `logicahome scan` for Hue/HomeKit/ESPHome/Matter/Shelly.
+- Structured errors with stable codes; the MCP server returns them instead of raw tracebacks.
+- Configurable timeout via `LOGICAHOME_TIMEOUT_S`.
+- Structured logging via `LOGICAHOME_LOG_LEVEL` (stderr only — keeps MCP stdio clean).
+- Schema versioning + automatic migrations on registry initialize.
+- Expanded device capabilities (climate, lock, cover, fan, media, battery) and matching `DeviceState` fields.
+- Home Assistant full coverage: climate, lock, cover, media_player, fan.
+- Light-touch i18n via `LOGICAHOME_LANG`.
+- CLI auto-completion enabled.
+- Dockerfile + `.dockerignore` for headless deployments.
+- systemd service file at `packaging/logicahome.service`.
+- MkDocs Material doc-site config.
+- Hardware testing checklist and demo recording script.
+- Release Please workflow for automated changelog PRs.
+- CodeQL security scanning workflow.
+- `.github/FUNDING.yml`.
+- Pre-commit hooks (`.pre-commit-config.yaml`).
+
+### Changed
+
+- CI caches pip and reports coverage to Codecov for the canonical job.
+- All third-party deps now have upper bounds.
+
+[0.3.0]: https://github.com/Rovemark/logicahome/compare/v0.2.0...v0.3.0
 
 ## [0.2.0] - 2026-04-27
 

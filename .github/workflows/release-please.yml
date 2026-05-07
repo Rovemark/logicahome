@@ -1,0 +1,28 @@
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          release-type: python
+          package-name: logicahome
+          changelog-types: |
+            [
+              {"type":"feat","section":"Added","hidden":false},
+              {"type":"fix","section":"Fixed","hidden":false},
+              {"type":"perf","section":"Changed","hidden":false},
+              {"type":"refactor","section":"Changed","hidden":false},
+              {"type":"docs","section":"Documentation","hidden":false},
+              {"type":"chore","section":"Other","hidden":true},
+              {"type":"ci","section":"Other","hidden":true}
+            ]

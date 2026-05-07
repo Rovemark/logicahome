@@ -191,6 +191,79 @@ def _guess_capabilities(d: dict[str, Any]) -> list[str]:
     return ["on_off"]
 
 
+# --- Philips Hue ----------------------------------------------------------
+
+
+def connect_hue() -> None:
+    console.print(
+        Panel(
+            "[bold]Philips Hue[/]\n\n"
+            "You need:\n"
+            "  • The IP of your Hue Bridge on the LAN\n"
+            "    (visit https://discovery.meethue.com to discover it)\n"
+            "  • Physical access to the Bridge — you'll press its link button\n\n"
+            "This wizard will press through the official user-creation flow:\n"
+            "  1. Press the Bridge's round link button now.\n"
+            "  2. Within 30 seconds, this wizard POSTs to /api to create a key.\n"
+            "  3. Bridge returns the key, we save it. Done.",
+            title="Connect — hue",
+            border_style="cyan",
+        )
+    )
+
+    bridge_ip = typer.prompt("Hue Bridge IP")
+    typer.confirm("Did you press the Bridge's link button just now?", default=True, abort=True)
+
+    async def _create_key() -> tuple[bool, str]:
+        try:
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(
+                    f"http://{bridge_ip}/api",
+                    json={"devicetype": "logicahome#user"},
+                    timeout=aiohttp.ClientTimeout(total=10),
+                ) as resp,
+            ):
+                data = await resp.json()
+            if isinstance(data, list) and data and "success" in data[0]:
+                return True, data[0]["success"]["username"]
+            err = data[0].get("error", {}) if isinstance(data, list) and data else {}
+            return False, err.get("description", str(data))
+        except Exception as e:
+            return False, str(e)
+
+    ok, result = asyncio.run(_create_key())
+    if not ok:
+        console.print(f"[red]Failed:[/] {result}")
+        raise typer.Exit(1)
+
+    cfg = load_config()
+    cfg.setdefault("adapters", {})["hue"] = {"bridge_ip": bridge_ip, "api_key": result}
+    save_config(cfg)
+    console.print("\n[green]Saved.[/] Run [cyan]logicahome discover[/] to import lights.")
+
+
+# --- Shelly ---------------------------------------------------------------
+
+
+def connect_shelly() -> None:
+    console.print(
+        Panel(
+            "[bold]Shelly[/]\n\n"
+            "Shelly devices are configured manually for now — there's no LAN-wide\n"
+            "wizard that authenticates against unknown devices safely.\n\n"
+            "Open your config file and add entries under `adapters.shelly.devices`:\n"
+            "  - ip: 192.168.0.30\n"
+            '    name: "Hall plug"\n'
+            "    gen: 2          # 1 or 2\n"
+            "    channel: 0\n\n"
+            "Run [cyan]logicahome scan[/] to find candidate IPs on your LAN.",
+            title="Connect — shelly",
+            border_style="cyan",
+        )
+    )
+
+
 # --- Network scan ---------------------------------------------------------
 
 
@@ -214,4 +287,53 @@ def scan_network() -> list[dict[str, Any]]:
                 )
         except Exception as e:
             console.print(f"[yellow]Tuya scan failed:[/] {e}")
+    hits.extend(_scan_mdns())
+    return hits
+
+
+def _scan_mdns() -> list[dict[str, Any]]:
+    """mDNS / zeroconf scan for Hue, HomeKit, ESPHome, Matter, etc."""
+    try:
+        from zeroconf import ServiceBrowser, Zeroconf
+    except ImportError:
+        return []
+
+    services = [
+        ("_hue._tcp.local.", "hue"),
+        ("_hap._tcp.local.", "homekit"),
+        ("_esphomelib._tcp.local.", "esphome"),
+        ("_matter._tcp.local.", "matter"),
+        ("_shelly._tcp.local.", "shelly"),
+    ]
+    hits: list[dict[str, Any]] = []
+
+    class _Listener:
+        def __init__(self, label: str) -> None:
+            self.label = label
+
+        def remove_service(self, *_a: Any) -> None:
+            pass
+
+        def update_service(self, *_a: Any) -> None:
+            pass
+
+        def add_service(self, zc: Any, type_: str, name: str) -> None:
+            info = zc.get_service_info(type_, name)
+            if info and info.addresses:
+                ip = ".".join(str(b) for b in info.addresses[0])
+                hits.append({"adapter": self.label, "ip": ip, "id": name, "version": "mdns"})
+
+    zc = Zeroconf()
+    browsers: list[ServiceBrowser] = []
+    try:
+        console.print("[dim]Scanning mDNS for Hue/HomeKit/ESPHome/Matter/Shelly (3s)...[/]")
+        for service, label in services:
+            browsers.append(ServiceBrowser(zc, service, _Listener(label)))
+        import time as _time
+
+        _time.sleep(3)
+    except Exception as e:
+        console.print(f"[yellow]mDNS scan failed:[/] {e}")
+    finally:
+        zc.close()
     return hits

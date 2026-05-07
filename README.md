@@ -19,6 +19,8 @@ LogicaHome is an open-source bridge between any large language model and the dev
 
 You bring the AI. LogicaHome handles the lights.
 
+> 📺 **Demo video coming soon.** A 30-second screen capture of Claude Desktop dimming a lamp via LogicaHome will live in `docs/demo.gif`. See `docs/demo.md` for the recording script.
+
 ## Table of contents
 
 - [Why](#why)

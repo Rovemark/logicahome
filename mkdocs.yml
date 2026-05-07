@@ -1,0 +1,41 @@
+site_name: LogicaHome
+site_description: Local-first MCP server and CLI for smart home control.
+site_url: https://rovemark.github.io/logicahome/
+repo_url: https://github.com/Rovemark/logicahome
+repo_name: Rovemark/logicahome
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      toggle: { icon: material/weather-night, name: Switch to dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      toggle: { icon: material/weather-sunny, name: Switch to light mode }
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - Cookbook: cookbook.md
+  - Writing adapters: writing-adapters.md
+  - Hardware testing: hardware-testing.md
+  - Release process: release-process.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - tables
+  - toc:
+      permalink: true

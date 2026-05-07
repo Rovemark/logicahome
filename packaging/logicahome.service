@@ -1,0 +1,21 @@
+[Unit]
+Description=LogicaHome MCP server (HTTP/SSE)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/logicahome mcp serve --http --host 127.0.0.1 --port 8765
+Restart=on-failure
+RestartSec=3
+User=%i
+Environment=LOGICAHOME_LOG_LEVEL=INFO
+
+# Hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+
+[Install]
+WantedBy=default.target

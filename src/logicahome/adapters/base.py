@@ -14,6 +14,10 @@ from logicahome.core.adapter import Adapter
 ADAPTERS: dict[str, str] = {
     "tuya": "logicahome.adapters.tuya:TuyaAdapter",
     "home_assistant": "logicahome.adapters.home_assistant:HomeAssistantAdapter",
+    "hue": "logicahome.adapters.hue:HueAdapter",
+    "shelly": "logicahome.adapters.shelly:ShellyAdapter",
+    "esphome": "logicahome.adapters.esphome:ESPHomeAdapter",
+    "matter": "logicahome.adapters.matter:MatterAdapter",
 }
 
 

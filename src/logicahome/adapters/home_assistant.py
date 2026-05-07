@@ -20,8 +20,11 @@ from logicahome.core.device import Device, DeviceCapability, DeviceState
 DOMAIN_CAPS: dict[str, list[DeviceCapability]] = {
     "light": [DeviceCapability.ON_OFF, DeviceCapability.BRIGHTNESS, DeviceCapability.COLOR],
     "switch": [DeviceCapability.ON_OFF],
-    "climate": [DeviceCapability.TEMPERATURE],
+    "climate": [DeviceCapability.TEMPERATURE, DeviceCapability.TEMPERATURE_SET],
     "lock": [DeviceCapability.LOCK],
+    "cover": [DeviceCapability.COVER],
+    "fan": [DeviceCapability.ON_OFF, DeviceCapability.FAN_SPEED],
+    "media_player": [DeviceCapability.MEDIA_PLAY, DeviceCapability.MEDIA_VOLUME],
     "binary_sensor": [DeviceCapability.MOTION, DeviceCapability.CONTACT],
     "sensor": [],
     "scene": [DeviceCapability.SCENE],
@@ -94,6 +97,16 @@ class HomeAssistantAdapter(Adapter):
             payload["brightness_pct"] = changes["brightness"]
         if "color_rgb" in changes:
             payload["rgb_color"] = list(changes["color_rgb"])
+        if "color_temp_kelvin" in changes:
+            payload["kelvin"] = int(changes["color_temp_kelvin"])
+        if "target_temperature_c" in changes:
+            payload["temperature"] = float(changes["target_temperature_c"])
+        if "media_volume" in changes:
+            payload["volume_level"] = max(0, min(100, int(changes["media_volume"]))) / 100
+        if "cover_position" in changes:
+            payload["position"] = max(0, min(100, int(changes["cover_position"])))
+        if "fan_speed" in changes:
+            payload["percentage"] = max(0, min(100, int(changes["fan_speed"])))
         async with session.post(
             f"{self.config['url']}/api/services/{domain}/{service}",
             json=payload,
@@ -107,9 +120,31 @@ class HomeAssistantAdapter(Adapter):
 
 
 def _ha_service_for(domain: str, changes: dict[str, Any]) -> str | None:
+    if domain == "lock":
+        if "locked" in changes:
+            return "lock" if changes["locked"] else "unlock"
+        return None
+    if domain == "cover":
+        if "cover_position" in changes:
+            return "set_cover_position"
+        if "on" in changes:
+            return "open_cover" if changes["on"] else "close_cover"
+        return None
+    if domain == "climate":
+        if "target_temperature_c" in changes:
+            return "set_temperature"
+        return None
+    if domain == "media_player":
+        if "media_volume" in changes:
+            return "volume_set"
+        if "media_playing" in changes:
+            return "media_play" if changes["media_playing"] else "media_pause"
+        return None
+    if domain == "fan" and "fan_speed" in changes:
+        return "set_percentage"
     if "on" in changes:
         return "turn_on" if changes["on"] else "turn_off"
-    if "brightness" in changes or "color_rgb" in changes:
+    if "brightness" in changes or "color_rgb" in changes or "color_temp_kelvin" in changes:
         return "turn_on"
     return None
 
@@ -126,12 +161,19 @@ def _parse_ha_state(data: dict[str, Any]) -> DeviceState:
     if brightness is not None:
         brightness = round(brightness / 255 * 100)
     rgb = attrs.get("rgb_color")
+    volume = attrs.get("volume_level")
     return DeviceState(
         on=on,
         brightness=brightness,
         color_rgb=tuple(rgb) if rgb else None,
         color_temp_kelvin=attrs.get("color_temp_kelvin"),
-        temperature_c=attrs.get("temperature") or attrs.get("current_temperature"),
+        temperature_c=attrs.get("current_temperature") or attrs.get("temperature"),
+        target_temperature_c=attrs.get("temperature"),
         humidity_pct=attrs.get("humidity"),
+        locked=(state == "locked") if state in {"locked", "unlocked"} else None,
+        media_playing=(state == "playing") if state in {"playing", "paused", "idle"} else None,
+        media_volume=round(volume * 100) if volume is not None else None,
+        cover_position=attrs.get("current_position"),
+        fan_speed=attrs.get("percentage"),
         extra={"raw_state": state},
     )

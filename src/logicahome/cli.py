@@ -19,7 +19,7 @@ app = typer.Typer(
     name="logicahome",
     help="Local-first MCP server and CLI for smart home control.",
     no_args_is_help=True,
-    add_completion=False,
+    add_completion=True,
 )
 mcp_app = typer.Typer(help="Run or install the LogicaHome MCP server.", no_args_is_help=True)
 device_app = typer.Typer(help="Inspect and control devices.", no_args_is_help=True)
@@ -204,6 +204,22 @@ def connect_ha_cmd() -> None:
     connect_home_assistant()
 
 
+@connect_app.command("hue")
+def connect_hue_cmd() -> None:
+    """Wizard for Philips Hue (Bridge IP + link-button pairing)."""
+    from logicahome.wizards import connect_hue
+
+    connect_hue()
+
+
+@connect_app.command("shelly")
+def connect_shelly_cmd() -> None:
+    """Show instructions for adding Shelly devices to config."""
+    from logicahome.wizards import connect_shelly
+
+    connect_shelly()
+
+
 @app.command()
 def scan() -> None:
     """Passively scan the local network for devices LogicaHome can recognize."""
@@ -313,8 +329,17 @@ def scene_remove(slug: str) -> None:
 
 
 @mcp_app.command("serve")
-def mcp_serve() -> None:
-    """Run the MCP server over stdio (for Claude Desktop, Antigravity, Cursor, ...)."""
+def mcp_serve(
+    http: bool = typer.Option(False, "--http", help="Serve over HTTP/SSE instead of stdio"),
+    host: str = typer.Option("127.0.0.1", "--host", help="(--http) Bind host"),
+    port: int = typer.Option(8765, "--port", help="(--http) Bind port"),
+) -> None:
+    """Run the MCP server over stdio (default) or HTTP/SSE (--http)."""
+    if http:
+        from logicahome.server_http import run_http_server
+
+        run_http_server(host=host, port=port)
+        return
     from logicahome.server import run_stdio_server
 
     asyncio.run(run_stdio_server())

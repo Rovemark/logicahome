@@ -27,30 +27,42 @@ def default_db_path() -> Path:
     return _config_dir() / "registry.db"
 
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS devices (
-    slug TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    adapter TEXT NOT NULL,
-    native_id TEXT NOT NULL,
-    capabilities TEXT NOT NULL,
-    room TEXT,
-    manufacturer TEXT,
-    model TEXT,
-    metadata TEXT NOT NULL DEFAULT '{}',
-    UNIQUE(adapter, native_id)
-);
+SCHEMA_VERSION = 2
 
-CREATE INDEX IF NOT EXISTS idx_devices_adapter ON devices(adapter);
-CREATE INDEX IF NOT EXISTS idx_devices_room ON devices(room);
+MIGRATIONS: list[str] = [
+    # v1 — initial schema (devices + scenes)
+    """
+    CREATE TABLE IF NOT EXISTS devices (
+        slug TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        adapter TEXT NOT NULL,
+        native_id TEXT NOT NULL,
+        capabilities TEXT NOT NULL,
+        room TEXT,
+        manufacturer TEXT,
+        model TEXT,
+        metadata TEXT NOT NULL DEFAULT '{}',
+        UNIQUE(adapter, native_id)
+    );
 
-CREATE TABLE IF NOT EXISTS scenes (
-    slug TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT,
-    actions TEXT NOT NULL
-);
-"""
+    CREATE INDEX IF NOT EXISTS idx_devices_adapter ON devices(adapter);
+    CREATE INDEX IF NOT EXISTS idx_devices_room ON devices(room);
+
+    CREATE TABLE IF NOT EXISTS scenes (
+        slug TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        actions TEXT NOT NULL
+    );
+    """,
+    # v2 — schema versioning table
+    """
+    CREATE TABLE IF NOT EXISTS schema_meta (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    );
+    """,
+]
 
 
 class Registry:
@@ -61,8 +73,26 @@ class Registry:
 
     async def initialize(self) -> None:
         async with aiosqlite.connect(self.db_path) as db:
-            await db.executescript(SCHEMA)
+            db.row_factory = aiosqlite.Row
+            current = await self._current_version(db)
+            for i, migration_sql in enumerate(MIGRATIONS, start=1):
+                if i > current:
+                    await db.executescript(migration_sql)
+            await db.execute(
+                "INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('version', ?)",
+                (str(SCHEMA_VERSION),),
+            )
             await db.commit()
+
+    @staticmethod
+    async def _current_version(db: Any) -> int:
+        try:
+            row = await (
+                await db.execute("SELECT value FROM schema_meta WHERE key='version'")
+            ).fetchone()
+            return int(row["value"]) if row else 0
+        except Exception:
+            return 0
 
     async def upsert(self, device: Device) -> None:
         async with aiosqlite.connect(self.db_path) as db:

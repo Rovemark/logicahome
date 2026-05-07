@@ -7,14 +7,19 @@ isn't tied to a specific surface (CLI vs MCP) lives here.
 from __future__ import annotations
 
 import asyncio
+import os
 from typing import Any
 
 from logicahome.adapters import load_adapter
 from logicahome.core.adapter import Adapter, AdapterError
 from logicahome.core.config import load_config
 from logicahome.core.device import Device, DeviceState
+from logicahome.core.logging import get_logger
 from logicahome.core.registry import Registry
 from logicahome.core.scene import Scene, SceneAction
+
+log = get_logger("logicahome.runtime")
+DEFAULT_TIMEOUT_S = float(os.environ.get("LOGICAHOME_TIMEOUT_S", "10"))
 
 
 class Runtime:
@@ -58,11 +63,18 @@ class Runtime:
 
     async def get_state(self, slug: str) -> DeviceState:
         device = await self._require_device(slug)
-        return await self._adapter_for(device).get_state(device)
+        return await asyncio.wait_for(
+            self._adapter_for(device).get_state(device),
+            timeout=DEFAULT_TIMEOUT_S,
+        )
 
     async def set_state(self, slug: str, **changes: Any) -> DeviceState:
         device = await self._require_device(slug)
-        return await self._adapter_for(device).set_state(device, **changes)
+        log.debug("set_state slug=%s changes=%s", slug, changes)
+        return await asyncio.wait_for(
+            self._adapter_for(device).set_state(device, **changes),
+            timeout=DEFAULT_TIMEOUT_S,
+        )
 
     # --- scenes ------------------------------------------------------------
 

@@ -13,8 +13,11 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 
+from logicahome.core.errors import StructuredError
+from logicahome.core.logging import get_logger
 from logicahome.runtime import Runtime
 
+log = get_logger("logicahome.server")
 server: Server = Server("logicahome")
 _runtime: Runtime | None = None
 
@@ -25,6 +28,11 @@ async def _ensure_runtime() -> Runtime:
         _runtime = Runtime()
         await _runtime.initialize()
     return _runtime
+
+
+def _structured_error_text(exc: BaseException, **context: Any) -> str:
+    err = StructuredError.from_exception(exc, **context)
+    return json.dumps({"error": err.model_dump(exclude_none=True)}, indent=2)
 
 
 @server.list_tools()
@@ -145,6 +153,18 @@ async def list_tools() -> list[Tool]:
 
 @server.call_tool()
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
+    log.debug("tool call: %s args=%s", name, arguments)
+    try:
+        return await _dispatch(name, arguments)
+    except Exception as exc:
+        log.warning("tool %s failed: %s", name, exc)
+        ctx: dict[str, Any] = {}
+        if "slug" in arguments:
+            ctx["device_slug"] = arguments["slug"]
+        return [TextContent(type="text", text=_structured_error_text(exc, **ctx))]
+
+
+async def _dispatch(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     rt = await _ensure_runtime()
 
     if name == "list_devices":
