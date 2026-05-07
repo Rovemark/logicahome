@@ -67,6 +67,18 @@ def build_app(*, mount_mcp: bool = True) -> Any:
         Route("/api/discover", api_module.discover, methods=["POST"]),
         Route("/api/scan", api_module.scan, methods=["GET"]),
         Route("/api/adapters", api_module.list_adapters, methods=["GET"]),
+        Route("/api/adapters/{adapter}/discover", api_module.discover_one, methods=["POST"]),
+        Route(
+            "/api/adapters/home_assistant/validate",
+            api_module.validate_home_assistant,
+            methods=["POST"],
+        ),
+        Route("/api/adapters/hue/pair", api_module.pair_hue, methods=["POST"]),
+        Route("/api/config", api_module.get_config, methods=["GET"]),
+        Route("/api/config/adapters/{adapter}", api_module.save_adapter_config, methods=["PUT"]),
+        Route(
+            "/api/config/adapters/{adapter}", api_module.delete_adapter_config, methods=["DELETE"]
+        ),
         Route("/api/version", api_module.version, methods=["GET"]),
     ]
 
