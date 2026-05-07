@@ -2,6 +2,14 @@
 
 All notable changes to LogicaHome are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0](https://github.com/Rovemark/logicahome/compare/v0.4.0...v0.5.0) (2026-05-07)
+
+
+### Features
+
+* **web:** config + pairing endpoints for visual onboarding ([2497d61](https://github.com/Rovemark/logicahome/commit/2497d610cc5cb13d923cfdb640595b8729a65c5a))
+* **web:** HA mDNS detect + Tuya Cloud auto-discovery ([e21ab9a](https://github.com/Rovemark/logicahome/commit/e21ab9a9c25ea682a5b17486ec5e94044d478296))
+
 ## [Unreleased]
 
 ### Planned
