@@ -73,7 +73,17 @@ def build_app(*, mount_mcp: bool = True) -> Any:
             api_module.validate_home_assistant,
             methods=["POST"],
         ),
+        Route(
+            "/api/adapters/home_assistant/detect",
+            api_module.detect_home_assistant,
+            methods=["GET"],
+        ),
         Route("/api/adapters/hue/pair", api_module.pair_hue, methods=["POST"]),
+        Route(
+            "/api/adapters/tuya/cloud_setup",
+            api_module.setup_tuya_cloud,
+            methods=["POST"],
+        ),
         Route("/api/config", api_module.get_config, methods=["GET"]),
         Route("/api/config/adapters/{adapter}", api_module.save_adapter_config, methods=["PUT"]),
         Route(

@@ -219,6 +219,150 @@ async def pair_hue(request: Request) -> JSONResponse:
     return JSONResponse({"ok": False, "message": msg})
 
 
+async def detect_home_assistant(_: Request) -> JSONResponse:
+    """mDNS scan for Home Assistant on the LAN."""
+    try:
+        from zeroconf import ServiceBrowser, Zeroconf
+    except ImportError:
+        return JSONResponse({"hits": []})
+
+    hits: list[dict[str, Any]] = []
+
+    class _Listener:
+        def add_service(self, zc: Any, type_: str, name: str) -> None:
+            info = zc.get_service_info(type_, name)
+            if info and info.addresses:
+                ip = ".".join(str(b) for b in info.addresses[0])
+                port = info.port or 8123
+                hits.append(
+                    {
+                        "ip": ip,
+                        "port": port,
+                        "url": f"http://{ip}:{port}",
+                        "name": name,
+                    }
+                )
+
+        def remove_service(self, *_a: Any) -> None:
+            pass
+
+        def update_service(self, *_a: Any) -> None:
+            pass
+
+    zc = Zeroconf()
+    try:
+        for service in ("_home-assistant._tcp.local.", "_hass-mobile-app._tcp.local."):
+            ServiceBrowser(zc, service, _Listener())
+        import time as _time
+
+        _time.sleep(2)
+    finally:
+        zc.close()
+    return JSONResponse({"hits": hits})
+
+
+async def setup_tuya_cloud(request: Request) -> JSONResponse:
+    """Pull every Tuya device + local_key from the Tuya IoT Cloud, save config.
+
+    No terminal wizard required. The user creates a Tuya IoT Cloud project once
+    (free tier) and provides the project's Access ID + Access Secret + region.
+    The user must also link their SmartLife app to the project (one-time, via
+    the Tuya IoT web UI: 'Devices → Link Tuya App Account').
+    """
+    try:
+        import tinytuya  # type: ignore[import-not-found]
+    except ImportError:
+        return JSONResponse(
+            {
+                "error": {
+                    "code": "adapter_unavailable",
+                    "message": "tinytuya not installed",
+                    "fix": "Run: pip install 'logicahome[tuya]'",
+                }
+            },
+            status_code=400,
+        )
+
+    payload = await _json_body(request)
+    api_key = (payload.get("api_key") or "").strip()
+    api_secret = (payload.get("api_secret") or "").strip()
+    api_region = (payload.get("api_region") or "us").strip().lower()
+
+    if not api_key or not api_secret:
+        return JSONResponse(
+            {"error": {"code": "invalid_input", "message": "api_key and api_secret required"}},
+            status_code=400,
+        )
+
+    try:
+        cloud = tinytuya.Cloud(
+            apiRegion=api_region,
+            apiKey=api_key,
+            apiSecret=api_secret,
+        )
+        devices_raw = cloud.getdevices(verbose=True)
+    except Exception as e:
+        return JSONResponse(
+            {"error": {"code": "auth_failed", "message": str(e)}},
+            status_code=400,
+        )
+
+    if isinstance(devices_raw, dict) and "Error" in devices_raw:
+        return JSONResponse(
+            {
+                "error": {
+                    "code": "auth_failed",
+                    "message": devices_raw.get("Error"),
+                    "fix": "Confirm the Access ID/Secret and that you linked the SmartLife app to the project.",
+                }
+            },
+            status_code=400,
+        )
+
+    if not isinstance(devices_raw, list):
+        return JSONResponse(
+            {"error": {"code": "internal_error", "message": "Unexpected Tuya cloud response"}},
+            status_code=500,
+        )
+
+    parsed: list[dict[str, Any]] = []
+    for d in devices_raw:
+        if not d.get("id") or not d.get("key"):
+            continue
+        parsed.append(
+            {
+                "id": d.get("id"),
+                "ip": d.get("ip", ""),
+                "local_key": d.get("key"),
+                "name": d.get("name", d.get("id")),
+                "version": str(d.get("version", "3.4")),
+                "manufacturer": "Tuya",
+                "model": d.get("category"),
+                "capabilities": _tuya_caps_from_category(d.get("category", "")),
+            }
+        )
+
+    from logicahome.core.config import load_config, save_config
+
+    cfg = load_config()
+    cfg.setdefault("adapters", {})["tuya"] = {"devices": parsed}
+    save_config(cfg)
+    from logicahome.web import app as app_module
+
+    app_module._runtime = None  # type: ignore[attr-defined]
+
+    return JSONResponse({"ok": True, "device_count": len(parsed), "devices": parsed})
+
+
+def _tuya_caps_from_category(category: str) -> list[str]:
+    cat = (category or "").lower()
+    if any(k in cat for k in ["dj", "light", "lamp"]):
+        return ["on_off", "brightness", "color"]
+    if "cz" in cat:
+        return ["on_off", "power_metering"]
+    return ["on_off"]
+
+
 async def discover_one(request: Request) -> JSONResponse:
     from logicahome.adapters import load_adapter
     from logicahome.core.config import load_config
