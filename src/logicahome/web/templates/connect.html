@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}LogicaHome — Connect{% endblock %}
+{% block content %}
+<hgroup>
+  <h2>Connect an adapter</h2>
+  <p>Each smart-home ecosystem gets its own wizard. The CLI runs the actual flow — this page links you to the right command.</p>
+</hgroup>
+
+<div class="device-grid">
+  <article class="device-card">
+    <h4>Tuya / SmartLife</h4>
+    <div class="meta">Local LAN — needs Tuya IoT Cloud account once.</div>
+    <p><code>logicahome connect tuya</code></p>
+  </article>
+
+  <article class="device-card">
+    <h4>Home Assistant</h4>
+    <div class="meta">Bridge into an existing HA install via REST.</div>
+    <p><code>logicahome connect home-assistant</code></p>
+  </article>
+
+  <article class="device-card">
+    <h4>Philips Hue</h4>
+    <div class="meta">Local Bridge REST — press the link button.</div>
+    <p><code>logicahome connect hue</code></p>
+  </article>
+
+  <article class="device-card">
+    <h4>Shelly</h4>
+    <div class="meta">Manual config (Gen1 + Gen2).</div>
+    <p><code>logicahome connect shelly</code></p>
+  </article>
+
+  <article class="device-card">
+    <h4>ESPHome</h4>
+    <div class="meta">Native ESPHome API. Optional dep: <code>pip install 'logicahome[esphome]'</code>.</div>
+    <p>Add devices manually to <code>config.yaml</code> under <code>adapters.esphome.devices</code>.</p>
+  </article>
+
+  <article class="device-card">
+    <h4>Matter</h4>
+    <div class="meta">Skeleton against python-matter-server. Pair via your existing controller.</div>
+    <p>Add <code>server_url</code> to <code>config.yaml</code> under <code>adapters.matter</code>.</p>
+  </article>
+</div>
+
+<p style="margin-top:1.5rem;">After connecting any adapter, run:</p>
+<pre><code>logicahome discover</code></pre>
+<p>then come back to <a href="/devices">Devices</a>.</p>
+{% endblock %}

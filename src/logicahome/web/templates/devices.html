@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}LogicaHome — Devices{% endblock %}
+{% block content %}
+<hgroup>
+  <h2>Devices</h2>
+  <p>{{ devices|length }} known. Click slug to see live state via the JSON API.</p>
+</hgroup>
+
+{% if not devices %}
+<div class="empty">
+  No devices yet. Configure an adapter at <a href="/connect">Connect</a>, then <a href="/scan">Scan</a> the network or run <code>logicahome discover</code>.
+</div>
+{% else %}
+<div class="device-grid">
+  {% for d in devices %}
+  <article class="device-card">
+    <h4>{{ d.name }}</h4>
+    <div class="meta">
+      <strong>{{ d.adapter }}</strong> · {{ d.room or "no room" }}
+      {% if d.manufacturer %} · {{ d.manufacturer }}{% endif %}
+    </div>
+    <div class="meta">slug: <code>{{ d.slug }}</code></div>
+    <div class="meta">capabilities: {% for c in d.capabilities %}<code>{{ c.value }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</div>
+
+    <div class="controls">
+      <button hx-post="/api/devices/{{ d.slug }}/state"
+              hx-headers='{"Content-Type":"application/json"}'
+              hx-vals='{"on":true}'
+              hx-swap="none">On</button>
+      <button class="secondary"
+              hx-post="/api/devices/{{ d.slug }}/state"
+              hx-headers='{"Content-Type":"application/json"}'
+              hx-vals='{"on":false}'
+              hx-swap="none">Off</button>
+    </div>
+
+    {% if "brightness" in (d.capabilities|map(attribute="value")|list) %}
+    <label style="margin-top:0.75rem;">
+      Brightness
+      <input type="range" min="0" max="100" value="50"
+             hx-post="/api/devices/{{ d.slug }}/state"
+             hx-trigger="change"
+             hx-headers='{"Content-Type":"application/json"}'
+             hx-vals='js:{"brightness": parseInt(event.target.value), "on": parseInt(event.target.value) > 0}'
+             hx-swap="none">
+    </label>
+    {% endif %}
+
+    <details>
+      <summary>Live state</summary>
+      <pre id="state-{{ d.slug }}"
+           hx-get="/api/devices/{{ d.slug }}"
+           hx-trigger="revealed, every 5s"
+           hx-swap="innerHTML">loading…</pre>
+    </details>
+  </article>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

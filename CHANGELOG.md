@@ -10,6 +10,24 @@ All notable changes to LogicaHome are documented here. The format is based on [K
 - Google Home adapter using the official Home APIs.
 - Per-user memory ("Andre likes the living room at 60% before bed").
 
+## [0.4.0] - 2026-05-06
+
+### Added
+
+- **Web dashboard** at `logicahome ui` (Starlette + Jinja2 + htmx + Pico CSS, zero npm).
+  - Pages: Overview, Devices (live state polling), Scenes (snapshot + run), Connect, Scan, Settings.
+  - Auto-opens the browser to `http://127.0.0.1:8765` by default.
+  - Same port serves HTML, JSON API, and the MCP SSE endpoint at `/sse`.
+- **Public JSON API** for any external dashboard or automation tool:
+  - `GET /api/health` `/api/version` `/api/adapters`
+  - `GET /api/devices` `/api/devices/{slug}`
+  - `POST /api/devices/{slug}/state`
+  - `GET/POST /api/scenes` `POST /api/scenes/{slug}/run` `DELETE /api/scenes/{slug}` `POST /api/scenes/snapshot`
+  - `POST /api/discover` `GET /api/scan`
+- Wheel packaging now bundles `web/templates/` so `logicahome ui` works after `pip install logicahome`.
+
+[0.4.0]: https://github.com/Rovemark/logicahome/compare/v0.3.0...v0.4.0
+
 ## [0.3.0] - 2026-05-06
 
 ### Added

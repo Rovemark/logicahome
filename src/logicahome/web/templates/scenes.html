@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}LogicaHome — Scenes{% endblock %}
+{% block content %}
+<hgroup>
+  <h2>Scenes</h2>
+  <p>Multi-device snapshots. The AI triggers them by name.</p>
+</hgroup>
+
+<details>
+  <summary>Snapshot the current room as a new scene</summary>
+  <form hx-post="/api/scenes/snapshot"
+        hx-headers='{"Content-Type":"application/json"}'
+        hx-vals='js:{"slug": document.getElementById("snap-slug").value, "name": document.getElementById("snap-name").value, "description": document.getElementById("snap-desc").value}'
+        hx-swap="none"
+        onsubmit="return true;">
+    <label>slug
+      <input id="snap-slug" placeholder="bedtime" required />
+    </label>
+    <label>name
+      <input id="snap-name" placeholder="Bedtime" required />
+    </label>
+    <label>description
+      <input id="snap-desc" placeholder="Lights low, TV off" />
+    </label>
+    <button type="submit">Snapshot now</button>
+  </form>
+</details>
+
+<hr />
+
+{% if not scenes %}
+<div class="empty">No scenes yet. Use the form above or the CLI.</div>
+{% else %}
+<table>
+  <thead>
+    <tr><th>name</th><th>slug</th><th>devices</th><th>description</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for s in scenes %}
+    <tr>
+      <td><strong>{{ s.name }}</strong></td>
+      <td><code>{{ s.slug }}</code></td>
+      <td>{{ s.actions|length }}</td>
+      <td>{{ s.description or "" }}</td>
+      <td>
+        <button class="outline" style="padding:0.25rem 0.6rem; font-size:0.8rem;"
+                hx-post="/api/scenes/{{ s.slug }}/run" hx-swap="none">Run</button>
+        <button class="contrast outline" style="padding:0.25rem 0.6rem; font-size:0.8rem;"
+                hx-delete="/api/scenes/{{ s.slug }}" hx-swap="none"
+                hx-confirm="Delete scene {{ s.slug }}?">Delete</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

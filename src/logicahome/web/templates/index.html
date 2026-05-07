@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}LogicaHome — Overview{% endblock %}
+{% block content %}
+<hgroup>
+  <h2>Overview</h2>
+  <p>{{ devices|length }} device(s), {{ scenes|length }} scene(s), {{ adapters_configured|length }} adapter(s) configured.</p>
+</hgroup>
+
+<section>
+  <h3>Devices</h3>
+  {% if devices %}
+  <div class="device-grid">
+    {% for d in devices %}
+    <article class="device-card">
+      <h4>{{ d.name }}</h4>
+      <div class="meta">{{ d.adapter }} · {{ d.room or "no room" }}</div>
+      <div class="meta">slug: <code>{{ d.slug }}</code></div>
+      <div class="controls">
+        <button hx-post="/api/devices/{{ d.slug }}/state"
+                hx-headers='{"Content-Type":"application/json"}'
+                hx-vals='{"on":true}'
+                hx-swap="none">On</button>
+        <button class="secondary"
+                hx-post="/api/devices/{{ d.slug }}/state"
+                hx-headers='{"Content-Type":"application/json"}'
+                hx-vals='{"on":false}'
+                hx-swap="none">Off</button>
+        <a role="button" class="contrast outline" href="/devices">More</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    No devices yet. Run <a href="/connect">Connect</a> then <a href="/scan">Scan</a>.
+  </div>
+  {% endif %}
+</section>
+
+<section>
+  <h3>Scenes</h3>
+  {% if scenes %}
+  <ul>
+    {% for s in scenes %}
+    <li>
+      <strong>{{ s.name }}</strong> ({{ s.actions|length }} action(s))
+      <button class="outline"
+              hx-post="/api/scenes/{{ s.slug }}/run"
+              hx-swap="none"
+              style="float:right; padding: 0.3rem 0.7rem; font-size: 0.8rem;">Run</button>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty">
+    No scenes yet. Use the CLI: <code>logicahome scene snapshot &lt;slug&gt; --name "..."</code>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

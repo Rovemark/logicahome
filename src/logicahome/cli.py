@@ -345,6 +345,20 @@ def mcp_serve(
     asyncio.run(run_stdio_server())
 
 
+@app.command()
+def ui(
+    host: str = typer.Option(
+        "127.0.0.1", "--host", help="Bind host (use 0.0.0.0 to expose on LAN)"
+    ),
+    port: int = typer.Option(8765, "--port"),
+    no_open: bool = typer.Option(False, "--no-open", help="Don't open the browser automatically"),
+) -> None:
+    """Open the LogicaHome web dashboard (HTML + JSON API + MCP SSE on the same port)."""
+    from logicahome.web import run_web_server
+
+    run_web_server(host=host, port=port, open_browser=not no_open)
+
+
 @mcp_app.command("install")
 def mcp_install(
     client: str = typer.Option(

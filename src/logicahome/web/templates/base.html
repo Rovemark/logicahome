@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}LogicaHome{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+  <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+  <style>
+    :root {
+      --pico-primary: #7d3aed;
+      --pico-primary-hover: #9356f0;
+      --pico-primary-focus: rgba(125, 58, 237, 0.25);
+    }
+    nav.top {
+      border-bottom: 1px solid var(--pico-muted-border-color);
+      padding-block: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    nav.top ul { margin: 0; }
+    nav.top a { text-decoration: none; }
+    .badge {
+      display: inline-block;
+      padding: 0.1rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      background: var(--pico-primary);
+      color: white;
+      margin-left: 0.5rem;
+    }
+    .device-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .device-card {
+      border: 1px solid var(--pico-muted-border-color);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      background: var(--pico-card-background-color);
+    }
+    .device-card h4 { margin-bottom: 0.25rem; }
+    .device-card .meta { color: var(--pico-muted-color); font-size: 0.85rem; }
+    .controls { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
+    .controls button { margin: 0; padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+    footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--pico-muted-border-color); color: var(--pico-muted-color); font-size: 0.85rem; }
+    .empty { padding: 2rem; text-align: center; color: var(--pico-muted-color); border: 1px dashed var(--pico-muted-border-color); border-radius: 0.5rem; }
+  </style>
+</head>
+<body>
+  <nav class="top container-fluid">
+    <ul>
+      <li><strong>LogicaHome</strong><span class="badge">v{{ version }}</span></li>
+    </ul>
+    <ul>
+      <li><a href="/">Overview</a></li>
+      <li><a href="/devices">Devices</a></li>
+      <li><a href="/scenes">Scenes</a></li>
+      <li><a href="/connect">Connect</a></li>
+      <li><a href="/scan">Scan</a></li>
+      <li><a href="/settings">Settings</a></li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="container">
+    Local-first MCP server &amp; CLI for smart home control.
+    <a href="https://github.com/Rovemark/logicahome" target="_blank">github.com/Rovemark/logicahome</a>
+  </footer>
+</body>
+</html>

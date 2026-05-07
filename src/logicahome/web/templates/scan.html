@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}LogicaHome — Scan{% endblock %}
+{% block content %}
+<hgroup>
+  <h2>Scan</h2>
+  <p>Passive LAN discovery: Tuya UDP + mDNS for Hue, HomeKit, ESPHome, Matter, Shelly. Takes a few seconds.</p>
+</hgroup>
+
+<button hx-get="/api/scan" hx-target="#results" hx-swap="innerHTML">Scan now</button>
+
+<pre id="results" style="margin-top:1rem;">no scan yet</pre>
+{% endblock %}

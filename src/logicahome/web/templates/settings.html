@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}LogicaHome — Settings{% endblock %}
+{% block content %}
+<hgroup>
+  <h2>Settings</h2>
+  <p>Configuration lives at <code>~/.config/logicahome/config.yaml</code> (or platform-equivalent). Edit it directly for now.</p>
+</hgroup>
+
+<section>
+  <h3>Adapters configured</h3>
+  {% if adapters_configured %}
+  <ul>{% for a in adapters_configured %}<li><code>{{ a }}</code></li>{% endfor %}</ul>
+  {% else %}
+  <div class="empty">None yet — visit <a href="/connect">Connect</a>.</div>
+  {% endif %}
+</section>
+
+<section>
+  <h3>Adapters available</h3>
+  <ul>{% for a in adapters_available %}<li><code>{{ a }}</code></li>{% endfor %}</ul>
+</section>
+
+<section>
+  <h3>Environment variables</h3>
+  <table>
+    <tr><td><code>LOGICAHOME_TIMEOUT_S</code></td><td>Adapter call timeout (seconds, default 10)</td></tr>
+    <tr><td><code>LOGICAHOME_LOG_LEVEL</code></td><td>WARNING / INFO / DEBUG (default WARNING)</td></tr>
+    <tr><td><code>LOGICAHOME_LANG</code></td><td>en / pt</td></tr>
+  </table>
+</section>
+
+<section>
+  <h3>Integrations</h3>
+  <p>Any tool that speaks JSON over HTTP can drive LogicaHome. The full API is at <code>/api/*</code>. Examples:</p>
+  <ul>
+    <li><code>GET /api/devices</code></li>
+    <li><code>POST /api/devices/&lt;slug&gt;/state</code> with <code>{"on": true, "brightness": 30}</code></li>
+    <li><code>POST /api/scenes/&lt;slug&gt;/run</code></li>
+    <li><code>POST /api/scenes/snapshot</code> with <code>{"slug":"bedtime","name":"Bedtime"}</code></li>
+  </ul>
+  <p>The MCP SSE endpoint for AI clients is at <a href="/sse">/sse</a>.</p>
+</section>
+{% endblock %}
